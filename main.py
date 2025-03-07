@@ -15,15 +15,15 @@ def grad(outputs, inputs):
 def physics_loss(model: torch.nn.Module):
     """The physics loss of the model"""
     r = 0.005
-    temp_env = .25
+    x_bar = .25
     # create points in time (to evaluate the model ODE)
     ts = torch.linspace(0, 1000, steps=1000,).view(-1,1).requires_grad_(True)
-    # get points in temperature (to evaluate the model ODE)
-    temps = model(ts)
+    # get points in x (to evaluate the model ODE)
+    xs = model(ts)
     # get the gradient
-    dT = grad(temps, ts)[0]
+    dT = grad(xs, ts)[0]
     # compute the ODE
-    ode = dT - r * (temp_env - temps)
+    ode = dT - r * (x_bar - xs)
     # MSE of ODE
     return torch.mean(ode**2)
 
@@ -47,25 +47,25 @@ class Net(torch.nn.Module):
         return output
 
 
-class SystemTemperature(torch.nn.Module):
-    def __init__(self, temp_init):
+class System(torch.nn.Module):
+    def __init__(self, x_init):
         super().__init__()
         self.r = 0.005
-        self.temp_env = .25
-        self.temp_init = temp_init
+        self.x_bar = .25
+        self.x_init = x_init
 
     def forward(self, ts):
-        temp_current = (self.temp_init - self.temp_env) * torch.exp(-self.r * ts) + self.temp_env
-        return temp_current
+        x_current = (self.x_init - self.x_bar) * torch.exp(-self.r * ts) + self.x_bar
+        return x_current
 
 
 # Hyperparameters:
 alpha = 1000
 
 # Generate the dataset:
-true_model = SystemTemperature(temp_init=1)
+true_model = System(x_init=1)
 t_data = torch.linspace(0, 300, 10).unsqueeze(1)
-temp_data = true_model(t_data)
+x_data = true_model(t_data)
 
 # Model to train:
 model = Net()
@@ -75,8 +75,8 @@ loss_MSE = torch.nn.MSELoss()
 
 for epoch in range(int(1e5)):
     optimizer.zero_grad()
-    temp = model(t_data)
-    loss_1 = loss_MSE(temp, temp_data)
+    x = model(t_data)
+    loss_1 = loss_MSE(x, x_data)
     loss_2 = physics_loss(model)
     loss = loss_1 + alpha * loss_2
     if epoch % 1000 == 0:
@@ -86,11 +86,11 @@ for epoch in range(int(1e5)):
 
 # Plot after training:
 t_data_ext = torch.linspace(0, 1000, 50).unsqueeze(1)
-temp_data_ext = true_model(t_data_ext)
-temp_ext = model(t_data_ext)
+x_data_ext = true_model(t_data_ext)
+x_ext = model(t_data_ext)
 
-plt.scatter(t_data, temp_data, label="Data")
-plt.plot(t_data_ext, temp_data_ext, label="True model")
-plt.plot(t_data_ext, temp_ext.detach(), label="Trained model")
+plt.scatter(t_data, x_data, label="Data")
+plt.plot(t_data_ext, x_data_ext, label="True model")
+plt.plot(t_data_ext, x_ext.detach(), label="Trained model")
 plt.legend()
 plt.show()
