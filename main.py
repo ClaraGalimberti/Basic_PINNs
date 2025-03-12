@@ -58,7 +58,7 @@ class System(torch.nn.Module):
 
 
 # Hyperparameters:
-alpha = 100
+lambda_ = 100
 
 # Generate the dataset:
 true_model = System(x_init=1)
@@ -76,7 +76,7 @@ for epoch in range(int(2e4)):
     x = model(t_data)
     loss_1 = loss_MSE(x, x_data)
     loss_2 = physics_loss(model, true_model.r, true_model.x_bar)
-    loss = loss_1 + alpha * loss_2
+    loss = loss_1 + lambda_ * loss_2
     if epoch % 1000 == 0:
         print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f" % (epoch, 1e6*loss_1, 1e6*loss_2))
     loss.backward()
@@ -89,7 +89,7 @@ x_ext = model(t_data_ext)
 # Loss after training:
 loss_1 = loss_MSE(x, x_data)
 loss_2 = physics_loss(model, true_model.r, true_model.x_bar)
-loss = loss_1 + alpha * loss_2
+loss = loss_1 + lambda_ * loss_2
 print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f" % (epoch, 1e6*loss_1, 1e6*loss_2))
 
 plt.scatter(t_data, x_data, label="Data")
