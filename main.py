@@ -49,11 +49,11 @@ class System(torch.nn.Module):
     def __init__(self, x_init):
         super().__init__()
         self.r = 0.005
-        self.x_bar = .5
+        self.x_bar = 1.
         self.x_init = x_init
 
     def forward(self, ts):
-        x_current = -(self.x_init - self.x_bar) * torch.exp(-self.r * ts) + self.x_bar
+        x_current = (self.x_init - self.x_bar) * torch.exp(-self.r * ts) + self.x_bar
         return x_current
 
 
@@ -61,7 +61,7 @@ class System(torch.nn.Module):
 lambda_ = 100
 
 # Generate the dataset:
-true_model = System(x_init=1)
+true_model = System(x_init=0)
 t_data = torch.linspace(0, 300, 10).unsqueeze(1)
 x_data = true_model(t_data)
 
