@@ -78,7 +78,7 @@ for epoch in range(int(2e4)):
     optimizer.zero_grad()
     x = model(t_data)
     loss_1 = loss_MSE(x, x_data)
-    loss_2 = physics_loss(model, true_model.r, true_model.x_bar)
+    loss_2 = physics_loss(model)
     loss = loss_1 + lambda_ * loss_2
     if epoch % 1000 == 0:
         print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4f --- xbar = %.2f"
