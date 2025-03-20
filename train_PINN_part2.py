@@ -12,7 +12,7 @@ def grad(outputs, inputs):
         create_graph=True
     )
 
-def physics_loss(model: torch.nn.Module, r, x_bar):
+def physics_loss(model: torch.nn.Module):
     """The physics loss of the model"""
     # create points in time (to evaluate the model ODE)
     ts = torch.linspace(0, 1000, steps=1000,).view(-1,1).requires_grad_(True)
@@ -92,7 +92,7 @@ x_data_ext = true_model(t_data_ext)
 x_ext = model(t_data_ext)
 # Loss after training:
 loss_1 = loss_MSE(x, x_data)
-loss_2 = physics_loss(model, true_model.r, true_model.x_bar)
+loss_2 = physics_loss(model)
 loss = loss_1 + lambda_ * loss_2
 print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4f --- xbar = %.2f"
       % (epoch, 1e6*loss_1, 1e6*loss_2, model.r, model.x_bar))
