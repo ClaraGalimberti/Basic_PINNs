@@ -21,7 +21,7 @@ def physics_loss(model: torch.nn.Module, r, x_bar):
     # get the gradient
     dT = grad(xs, ts)[0]
     # compute the ODE
-    ode = dT - model.r * (x_bar - xs)
+    ode = dT - model.r * (model.x_bar - xs)
     # MSE of ODE
     return torch.mean(ode**2)
 
@@ -35,6 +35,7 @@ class Net(torch.nn.Module):
         self.output_layer = torch.nn.Linear(5,1)
 
         self.r = torch.nn.Parameter(0.1 * torch.ones(1))
+        self.x_bar = torch.nn.Parameter(0.5 * torch.ones(1))
 
     def forward(self, t):
         layer_hidden_1 = self.hidden_layer_1(t)
@@ -80,8 +81,8 @@ for epoch in range(int(2e4)):
     loss_2 = physics_loss(model, true_model.r, true_model.x_bar)
     loss = loss_1 + lambda_ * loss_2
     if epoch % 1000 == 0:
-        print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4f"
-              % (epoch, 1e6*loss_1, 1e6*loss_2, model.r))
+        print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4f --- xbar = %.2f"
+              % (epoch, 1e6*loss_1, 1e6*loss_2, model.r, model.x_bar))
     loss.backward()
     optimizer.step()
 
@@ -93,8 +94,8 @@ x_ext = model(t_data_ext)
 loss_1 = loss_MSE(x, x_data)
 loss_2 = physics_loss(model, true_model.r, true_model.x_bar)
 loss = loss_1 + lambda_ * loss_2
-print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4f"
-      % (epoch, 1e6*loss_1, 1e6*loss_2, model.r))
+print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4f --- xbar = %.2f"
+      % (epoch, 1e6*loss_1, 1e6*loss_2, model.r, model.x_bar))
 
 plt.scatter(t_data, x_data, label="Data")
 plt.plot(t_data_ext, x_data_ext, label="True model")
