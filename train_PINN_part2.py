@@ -100,6 +100,10 @@ print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4
 plt.scatter(t_data, x_data, label="Data")
 plt.plot(t_data_ext, x_data_ext, label="True model")
 plt.plot(t_data_ext, x_ext.detach(), label="Trained model")
+ax = plt.gca()
+ax.text(0.95, 0.02, r'$k_1 = %.5f, \,\, \bar{\alpha} = %.4f$' % (model.r, model.x_bar),
+        verticalalignment='bottom', horizontalalignment='right',
+        transform=ax.transAxes)
 plt.legend()
 plt.savefig("plot.pdf", format="pdf")
 plt.show()
