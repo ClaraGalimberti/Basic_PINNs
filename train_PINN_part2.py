@@ -27,7 +27,7 @@ def physics_loss(model: torch.nn.Module):
 
 
 class Net(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, x_bar_trainable=False):
         super(Net, self).__init__()
         self.hidden_layer_1 = torch.nn.Linear(1,5)
         self.hidden_layer_2 = torch.nn.Linear(5, 5)
@@ -35,7 +35,10 @@ class Net(torch.nn.Module):
         self.output_layer = torch.nn.Linear(5,1)
 
         self.r = torch.nn.Parameter(0.1 * torch.ones(1))
-        self.x_bar = torch.nn.Parameter(0.5 * torch.ones(1))
+        if x_bar_trainable:
+            self.x_bar = torch.nn.Parameter(0.5 * torch.ones(1))
+        else:
+            self.x_bar = torch.ones(1)
 
     def forward(self, t):
         layer_hidden_1 = self.hidden_layer_1(t)
@@ -49,11 +52,17 @@ class Net(torch.nn.Module):
 
 
 class System(torch.nn.Module):
-    def __init__(self, x_init):
+    def __init__(self, x_init, r=None, x_bar=None):
         super().__init__()
-        self.r = 0.005
-        self.x_bar = 1.
         self.x_init = x_init
+        if r is None:
+            self.r = 0.005
+        else:
+            self.r = r
+        if x_bar is None:
+            self.x_bar = 1.
+        else:
+            self.x_bar = x_bar
 
     def forward(self, ts):
         x_current = (self.x_init - self.x_bar) * torch.exp(-self.r * ts) + self.x_bar
@@ -89,6 +98,11 @@ for epoch in range(int(2e4)):
 # Plot after training:
 t_data_ext = torch.linspace(0, 1000, 50).unsqueeze(1)
 x_data_ext = true_model(t_data_ext)
+if model.x_bar.requires_grad:
+    learnt_model = System(x_init=0, r=model.r, x_bar=model.x_bar)
+else:
+    learnt_model = System(x_init=0, r=model.r)
+x_ode = learnt_model(t_data_ext)
 x_ext = model(t_data_ext)
 # Loss after training:
 loss_1 = loss_MSE(x, x_data)
@@ -99,11 +113,17 @@ print("Epoch: %i ---||--- Loss MSE: %.4f --- Loss Physics: %.4f ---||--- r = %.4
 
 plt.scatter(t_data, x_data, label="Data")
 plt.plot(t_data_ext, x_data_ext, label="True model")
-plt.plot(t_data_ext, x_ext.detach(), label="Trained model")
+plt.plot(t_data_ext, x_ext.detach(), label=r"$\alpha_{NN}(t)$")
+plt.plot(t_data_ext, x_ode.detach(), label=r"$\alpha_{ODE}(t, k_1)$", linestyle='dashed')
 ax = plt.gca()
-ax.text(0.95, 0.02, r'$k_1 = %.5f, \,\, \bar{\alpha} = %.4f$' % (model.r, model.x_bar),
-        verticalalignment='bottom', horizontalalignment='right',
-        transform=ax.transAxes)
+if model.x_bar.requires_grad:
+    ax.text(0.95, 0.02, r'$k_1 = %.5f, \,\, \bar{\alpha} = %.4f$' % (model.r, model.x_bar),
+            verticalalignment='bottom', horizontalalignment='right',
+            transform=ax.transAxes)
+else:
+    ax.text(0.95, 0.02, r'$k_1 = %.5f$' % (model.r),
+            verticalalignment='bottom', horizontalalignment='right',
+            transform=ax.transAxes)
 plt.legend()
 plt.savefig("plot.pdf", format="pdf")
 plt.show()
